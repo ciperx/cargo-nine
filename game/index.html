@@ -131,6 +131,36 @@
   #accuracy-line { margin-top: 18px; font-family: var(--font-readout); font-size: 12px; color: var(--muted); }
 
   @media (prefers-reduced-motion: reduce) { #hitmarker, #play, #banner, .feed-row { transition-duration: 0.01ms; } }
+  /* The agent kit: two utility charges and the ultimate, plus the blind wash and the recon dots. */
+  #abilitybar { position: fixed; right: 28px; bottom: 96px; display: flex; gap: 8px; }
+  .ability { min-width: 76px; padding: 7px 10px; border-radius: 8px; background: rgba(12, 16, 20, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.12); display: flex; flex-direction: column; gap: 2px;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .ability b { font-size: 13px; color: var(--text); }
+  .ability.spent { opacity: 0.32; }
+  .ability.ready { border-color: rgba(126, 217, 87, 0.6); }
+  #blind { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none;
+    transition: opacity 120ms linear; z-index: 30; }
+  #operator-pick { display: flex; gap: 8px; margin: 4px 0 18px; flex-wrap: wrap; justify-content: center; }
+  #difficulty-pick { display: flex; gap: 6px; margin: 2px 0 14px; justify-content: center; }
+  #difficulty-pick button { padding: 6px 14px; border-radius: 999px; cursor: pointer; font-size: 11px;
+    letter-spacing: 0.1em; background: rgba(18, 22, 27, 0.9); border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--muted); }
+  #difficulty-pick button[aria-pressed="true"] { color: var(--text); border-color: rgba(249, 199, 79, 0.7); }
+  #side-pick { display: flex; gap: 6px; margin: 2px 0 10px; justify-content: center; }
+  #side-pick button { padding: 6px 14px; border-radius: 999px; cursor: pointer; font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase; background: rgba(18, 22, 27, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.12); color: var(--muted); }
+  #side-pick button[aria-pressed="true"] { color: var(--text); border-color: rgba(126, 217, 87, 0.7); }
+  .op { flex: 1 1 140px; min-width: 132px; padding: 10px 12px; border-radius: 10px; cursor: pointer;
+    background: rgba(18, 22, 27, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: var(--muted);
+    display: flex; flex-direction: column; gap: 3px; font-size: 11px; letter-spacing: 0.06em;
+    text-transform: uppercase; text-align: left; }
+  .op b { font-size: 14px; letter-spacing: 0.1em; color: var(--text); }
+  .op.picked { border-color: rgba(126, 217, 87, 0.75); box-shadow: 0 0 0 1px rgba(126, 217, 87, 0.35) inset; }
+  #radar { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+  #radar i { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+    border: 2px solid #ff5a5a; background: rgba(255, 90, 90, 0.28); box-shadow: 0 0 10px rgba(255, 90, 90, 0.6); }
 </style>
 </head>
 <body>
@@ -160,7 +190,17 @@
 
   <div id="weapon-name">Kite-9</div>
   <div id="ammo"><span id="ammo-mag">15</span><span id="ammo-reserve">/ 60</span></div>
+
+  <div id="abilitybar">
+    <div class="ability" id="ab-op"><b>OP</b><span>Veil · scout</span></div>
+    <div class="ability" id="ab-flash"><b>F</b><span>Flash</span></div>
+    <div class="ability" id="ab-smoke"><b>E</b><span>Smoke</span></div>
+    <div class="ability" id="ab-ult"><b>X</b><span>Recon 0/3</span></div>
+  </div>
+  <div id="radar"></div>
 </div>
+
+<div id="blind"></div>
 
 <div id="buy-menu" hidden>
   <section class="buy-panel" role="dialog" aria-modal="true" aria-labelledby="buy-head">
@@ -181,6 +221,13 @@
   <section class="panel" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
     <h1 id="overlay-title">Cargo Nine</h1>
     <p id="overlay-copy">Two squads, one terminal. Click to deploy.</p>
+    <p id="progression-readout" style="position:fixed;left:18px;bottom:100px;color:#ddd">LV 1 · 0 XP · 1 BOX</p>
+    <p id="objective-readout" style="position:fixed;left:18px;bottom:80px;color:#f9c74f">Objective: hold the bay</p>
+    <div id="operator-pick" role="radiogroup" aria-label="Operator">
+      <button type="button" class="op picked" data-op="veil"><b>Veil</b><span>scout · flash, smoke, recon</span></button>
+      <button type="button" class="op" data-op="brick"><b>Brick</b><span>breacher · flash, frag, airburst</span></button>
+      <button type="button" class="op" data-op="doc"><b>Doc</b><span>anchor · smoke, stim, nano surge</span></button>
+    </div>
     <button id="play" type="button">Deploy</button>
     <ul class="keys">
       <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</li>
@@ -188,10 +235,15 @@
       <li><kbd>Click</kbd> Fire</li>
       <li><kbd>R</kbd> Reload</li>
       <li><kbd>Ctrl</kbd> Crouch</li>
+      <li><kbd>Shift</kbd> Slow walk</li>
+      <li><kbd>Tab</kbd> Leaderboard (hold)</li>
+      <li><kbd>E</kbd> Plant / defuse charge</li>
       <li><kbd>Space</kbd> Jump</li>
       <li><kbd>B</kbd> Buy menu</li>
       <li><kbd>1</kbd>–<kbd>4</kbd> Buy item</li>
       <li><kbd>Q</kbd> Swap weapon</li>
+      <li><kbd>G</kbd> Frag grenade</li>
+      <li><kbd>F</kbd> Flash · <kbd>E</kbd> Smoke · <kbd>X</kbd> Recon</li>
       <li><kbd>Esc</kbd> Pause</li>
     </ul>
   </section>

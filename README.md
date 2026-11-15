@@ -22,6 +22,20 @@ An entry for make.fun's "Make the best three.js tactical FPS" bounty, built by a
 - **Three bot team-mates against three attackers**, per side: waypoint navigation with per-axis
   wall sliding, a vision cone, line-of-sight occlusion against every wall in the map, aim that
   slows on the turn, and fire that misses more while the bot is moving.
+- **A frag grenade that changes the round**: `G` throws one per round, a real parabola that bounces
+  off the floor and the map's edges, a 2.6 s fuse and a linear falloff from 92 damage at the centre
+  to nothing at 6.5 m — it clears a stack holding a corner, and it hurts you if you hold it.
+- **Three operators, each with a two-slot utility kit and an ultimate** (Valorant-shaped, but every
+  effect touches the simulation, not just the screen):
+  - **Veil** (scout) — `F` flash blinds any bot looking at it for up to 2.4 s; `E` smoke stands nine
+    seconds and breaks bot sight lines through the same ray test the map uses; `X` recon marks every
+    living attacker on screen for six seconds.
+  - **Brick** (breacher) — `F` flash; `E` frag charge, 90 damage inside 5.5 m with linear falloff;
+    `X` airburst, a mortar that lands where you aim for 120 damage inside 6 m.
+  - **Doc** (anchor) — `F` smoke; `E` stim heals 40 hp on the spot; `X` nano surge refills health and
+    grants 50 armour.
+  Charges refill every round and the ultimate costs three kills (bullet or blast, both count). The
+  operator is picked on the start screen and the ability bar relabels itself.
 - **A round loop with an economy**: fifteen-second buy phase, 105-second live round, round won by
   elimination, money for kills and rounds, first to seven.
 - **A HUD that reads at a glance**: health and armour, ammo, money, round clock, score, kill feed,
@@ -45,7 +59,7 @@ mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 ## Controls
 
 `WASD` move · mouse look · click fire · `R` reload · `Ctrl` crouch · `Space` jump · `B` buy menu ·
-`1`–`4` buy item · `Q` swap weapon · `Esc` pause
+`1`–`4` buy item · `Q` swap weapon · `G` frag grenade · `Esc` pause
 
 ## Layout
 

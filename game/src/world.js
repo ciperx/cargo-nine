@@ -105,6 +105,15 @@ export function createWorld(scene) {
   box(1.6, 0.9, 1.6, 7.0, 0.45, 11.0, 'hairline');
   box(3.0, 2.6, 1.4, 0, 1.3, 9.2, 'hairline');
 
+  // Customs connector: two offset doorways form a mid choke without copying an existing map.
+  // Thin wooden shutters are the only penetrable cover; concrete always stops bullets.
+  box(0.35, 2.8, 4, -3.1, 1.4, -6.0, 'surface');
+  box(0.35, 2.8, 4, 3.1, 1.4, 5.8, 'surface');
+  const shutterA = box(2.0, 1.8, 0.12, -9.5, 0.9, -7.0, 'muted');
+  const shutterB = box(2.0, 1.8, 0.12, 9.5, 0.9, 7.0, 'muted');
+  shutterA.userData.penetrableThickness = 0.12;
+  shutterB.userData.penetrableThickness = 0.12;
+
   // Sight-line breakers down the middle, so neither side owns a straight run to the other spawn.
   box(1.4, 3.2, 1.4, 0, 1.6, -8.0, 'hairline');
   box(1.4, 1.1, 1.4, 0, 0.55, 7.0, 'hairline');

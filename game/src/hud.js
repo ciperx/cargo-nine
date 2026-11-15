@@ -38,6 +38,14 @@ export function createHud() {
   const scoreboard = $('scoreboard');
   const scoreboardBody = $('scoreboard-body');
   const accuracyLine = $('accuracy-line');
+  const flashSlot = $('ab-flash');
+  const smokeSlot = $('ab-smoke');
+  const ultSlot = $('ab-ult');
+  const blindLayer = $('blind');
+  const radarLayer = $('radar');
+  const operatorName = $('ab-op');
+  const operatorPicker = $('operator-pick');
+  let blindTimer = 0;
 
   let hitTimer = 0;
   let bannerTimer = 0;
@@ -176,6 +184,59 @@ export function createHud() {
     },
     onPlay(handler) {
       play.addEventListener('click', handler);
+    },
+    // The operator line: which agent is deployed, the two utility charges and the ultimate.
+    setAbilities(state, operator) {
+      const agent = operator || { id: 'veil', slot1: { key: 'F', label: 'Flash' }, slot2: { key: 'E', label: 'Smoke' },
+        ult: { key: 'X', label: 'Recon' } };
+      const signature = `${agent.id}|${state.slot1}|${state.slot2}|${state.ult}`;
+      setIfChanged('ab', signature, () => {
+        flashSlot.querySelector('b').textContent = agent.slot1.key;
+        flashSlot.querySelector('span').textContent = agent.slot1.label;
+        smokeSlot.querySelector('b').textContent = agent.slot2.key;
+        smokeSlot.querySelector('span').textContent = agent.slot2.label;
+        ultSlot.querySelector('b').textContent = agent.ult.key;
+        flashSlot.classList.toggle('spent', state.slot1 <= 0);
+        smokeSlot.classList.toggle('spent', state.slot2 <= 0);
+        ultSlot.classList.toggle('spent', state.ult < state.ultMax);
+        ultSlot.classList.toggle('ready', state.ult >= state.ultMax);
+        ultSlot.querySelector('span').textContent = state.ult >= state.ultMax
+          ? `${agent.ult.label} ready`
+          : `${agent.ult.label} ${state.ult}/${state.ultMax}`;
+      });
+    },
+    setOperator(operator) {
+      if (operatorName) operatorName.querySelector('span').textContent = `${operator.name} · ${operator.role}`;
+      if (!operatorPicker) return;
+      for (const button of operatorPicker.querySelectorAll('[data-op]')) {
+        button.classList.toggle('picked', button.dataset.op === operator.id);
+      }
+    },
+    onOperator(handler) {
+      if (!operatorPicker) return;
+      operatorPicker.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-op]');
+        if (button) handler(button.dataset.op);
+      });
+    },
+    blind(seconds) {
+      blindLayer.style.opacity = '0.9';
+      clearTimeout(blindTimer);
+      blindTimer = setTimeout(() => {
+        blindLayer.style.opacity = '0';
+      }, Math.max(120, seconds * 1000));
+    },
+    // Recon draws one dot per living attacker, projected from world space into screen space.
+    radar(dots) {
+      const wanted = dots || [];
+      while (radarLayer.children.length > wanted.length) radarLayer.lastChild.remove();
+      while (radarLayer.children.length < wanted.length) radarLayer.appendChild(document.createElement('i'));
+      wanted.forEach((dot, index) => {
+        const node = radarLayer.children[index];
+        node.style.left = `${dot.x}px`;
+        node.style.top = `${dot.y}px`;
+        node.style.display = dot.onScreen ? 'block' : 'none';
+      });
     },
   };
 }

@@ -14,7 +14,7 @@ const WIN_REWARD = 3250;
 const LOSS_REWARD = 1900;
 const MAX_MONEY = 9000;
 
-export function createMatch() {
+export function createMatch(mode = { id: 'elimination', target: WIN_TARGET, liveSeconds: LIVE_SECONDS }) {
   const state = {
     phase: PHASE.BUY,
     phaseLeft: BUY_SECONDS,
@@ -24,6 +24,8 @@ export function createMatch() {
     money: START_MONEY,
     armor: 0,
     playerTeam: 'ct',
+    mode: mode.id,
+    target: mode.target,
     lastResult: null,
     history: [],
   };
@@ -39,7 +41,7 @@ export function createMatch() {
 
   function beginLive() {
     state.phase = PHASE.LIVE;
-    state.phaseLeft = LIVE_SECONDS;
+    state.phaseLeft = mode.liveSeconds ?? LIVE_SECONDS;
     onPhase(PHASE.LIVE, state);
   }
 
@@ -53,7 +55,7 @@ export function createMatch() {
     const playerWon = winner === state.playerTeam;
     state.money = Math.min(MAX_MONEY, state.money + (playerWon ? WIN_REWARD : LOSS_REWARD));
     state.history.push({ round: state.round, winner, reason });
-    if (state.scoreCT >= WIN_TARGET || state.scoreT >= WIN_TARGET) {
+    if (state.scoreCT >= (state.mode === 'ctf' ? state.target : WIN_TARGET) || state.scoreT >= (state.mode === 'ctf' ? state.target : WIN_TARGET)) {
       state.phase = PHASE.MATCH;
       state.phaseLeft = 0;
       onPhase(PHASE.MATCH, state);

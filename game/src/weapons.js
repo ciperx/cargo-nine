@@ -5,10 +5,16 @@
 import * as THREE from 'three';
 import { PALETTE } from './palette.js';
 
+// Two arsenals, one per side: the CT (north) squad fields precise service weapons with quicker
+// reloads, the T (attacker) squad fields heavier, harder-hitting guns that recover slower. The
+// pistol and the shotgun are shared issue. Every name and silhouette here is original to Cargo
+// Nine; nothing is a copy of another game's armoury.
 export const WEAPONS = {
   kite: {
     id: 'kite',
+    team: 'both',
     name: 'Kite-9',
+    class: 'pistol',
     slot: 'sidearm',
     price: 0,
     damage: 26,
@@ -28,7 +34,9 @@ export const WEAPONS = {
   },
   vector: {
     id: 'vector',
+    team: 'ct',
     name: 'Vector-7',
+    class: 'rifle',
     slot: 'primary',
     price: 2700,
     damage: 33,
@@ -48,7 +56,9 @@ export const WEAPONS = {
   },
   hammer: {
     id: 'hammer',
+    team: 'both',
     name: 'Hammer-12',
+    class: 'shotgun',
     slot: 'primary',
     price: 1900,
     damage: 21,
@@ -69,7 +79,9 @@ export const WEAPONS = {
   },
   needle: {
     id: 'needle',
+    team: 'ct',
     name: 'Needle-5',
+    class: 'smg',
     slot: 'primary',
     price: 1250,
     damage: 22,
@@ -87,14 +99,125 @@ export const WEAPONS = {
     range: 100,
     auto: true,
   },
+  cobra: {
+    id: 'cobra',
+    team: 't',
+    name: 'Cobra-9',
+    class: 'smg',
+    slot: 'primary',
+    price: 1100,
+    damage: 25,
+    headshot: 3.6,
+    magSize: 25,
+    reserve: 100,
+    fireGap: 0.088,
+    reloadTime: 2.3,
+    spreadStill: 0.0038,
+    spreadMoving: 0.034,
+    spreadPerShot: 0.0058,
+    spreadMax: 0.075,
+    recovery: 0.048,
+    recoil: 0.015,
+    range: 68,
+    auto: true,
+  },
+  volk: {
+    id: 'volk',
+    team: 't',
+    name: 'Volk-K',
+    class: 'rifle',
+    slot: 'primary',
+    price: 2500,
+    damage: 38,
+    headshot: 4.3,
+    magSize: 30,
+    reserve: 90,
+    fireGap: 0.112,
+    reloadTime: 2.7,
+    spreadStill: 0.0034,
+    spreadMoving: 0.036,
+    spreadPerShot: 0.0072,
+    spreadMax: 0.082,
+    recovery: 0.042,
+    recoil: 0.019,
+    range: 92,
+    auto: true,
+  },
+  spine: {
+    id: 'spine',
+    team: 'ct',
+    name: 'Spine-8',
+    class: 'marksman',
+    slot: 'primary',
+    price: 3100,
+    damage: 58,
+    headshot: 4.6,
+    magSize: 10,
+    reserve: 40,
+    fireGap: 0.34,
+    reloadTime: 2.2,
+    spreadStill: 0.0012,
+    spreadMoving: 0.03,
+    spreadPerShot: 0.011,
+    spreadMax: 0.07,
+    recovery: 0.06,
+    recoil: 0.026,
+    range: 120,
+    auto: false,
+  },
+  widow: {
+    id: 'widow',
+    team: 't',
+    name: 'Widow-7',
+    class: 'sniper',
+    slot: 'primary',
+    price: 4200,
+    damage: 105,
+    headshot: 3.9,
+    magSize: 5,
+    reserve: 25,
+    fireGap: 1.18,
+    reloadTime: 3.1,
+    spreadStill: 0.0004,
+    spreadMoving: 0.055,
+    spreadPerShot: 0.02,
+    spreadMax: 0.09,
+    recovery: 0.035,
+    recoil: 0.055,
+    range: 150,
+    auto: false,
+  },
 };
 
-export const BUY_LIST = [
-  { id: 'vector', label: 'Vector-7 rifle', detail: '2700 · 30 rounds · 33 dmg' },
-  { id: 'needle', label: 'Needle-5 SMG', detail: '1250 · 20 rounds · 22 dmg' },
-  { id: 'hammer', label: 'Hammer-12 shotgun', detail: '1900 · 7 shells · 8 pellets' },
-  { id: 'armor', label: 'Plate carrier', detail: '650 · 100 armour' },
-];
+// The buy counter only offers the player's own side: shared issue plus that team's kit.
+export function buyList(team) {
+  return [...Object.values(WEAPONS)
+    .filter(w => w.slot === 'primary' && (w.team === 'both' || w.team === team))
+    .map(w => ({ id: w.id, label: `${w.name} ${w.class}`, detail: `${w.price} · ${w.magSize} rounds · ${w.damage} dmg` })),
+    { id: 'armor', label: 'Plate carrier', detail: '650 · 100 armour' }];
+}
+
+function legacyBuyList(team) {
+  const rows = Object.values(WEAPONS).filter((weapon) => weapon.slot === 'primary' && (weapon.team === 'both' || weapon.team === team));
+  const list = [
+    { id: 'vector', label: 'Vector-7 rifle', detail: '2700 · 30 rounds · 33 dmg' },
+    { id: 'needle', label: 'Needle-5 SMG', detail: '1250 · 20 rounds · 22 dmg' },
+    { id: 'hammer', label: 'Hammer-12 shotgun', detail: '1900 · 7 shells · 8 pellets' },
+    { id: 'armor', label: 'Plate carrier', detail: '650 · 100 armour' },
+  ];
+  if (team === 't') {
+    list[0] = { id: 'volk', label: 'Volk-K rifle', detail: '2500 · 30 rounds · 38 dmg' };
+    list[1] = { id: 'cobra', label: 'Cobra-9 SMG', detail: '1100 · 25 rounds · 25 dmg' };
+  }
+  if (team === 'ct') {
+    list[0] = { id: 'spine', label: 'Spine-8 marksman', detail: '3100 · 10 rounds · 58 dmg' };
+    list[1] = { id: 'needle', label: 'Needle-5 SMG', detail: '1250 · 20 rounds · 22 dmg' };
+  }
+  void rows;
+  return list;
+}
+
+export const BUY_LIST = buyList('ct');
 
 export function createWeaponry(camera) {
   const materialBody = new THREE.MeshStandardMaterial({ color: new THREE.Color('#7f858d'), roughness: 0.38, metalness: 0.62 });
