@@ -195,7 +195,7 @@ function aimAt(point) {
 }
 
 function onPlayerHit(amount, bot) {
-  if (!vitals.alive) return;
+  if (!vitals.alive || match.state.phase !== PHASE.LIVE) return;
   let left = amount;
   if (match.state.armor > 0) {
     const absorbed = left * 0.5;
@@ -220,6 +220,10 @@ function die(reason) {
   stats.deaths += 1;
   hud.feed(`${playerName} down — ${reason}`, 'bad');
   hud.damage('kill');
+  // Dead but the round is not over: say so, and show what the squad is doing about it.
+  hud.banner('YOU ARE DOWN', 'bad', 2200);
+  hud.setPhase('SPECTATING', 'bad');
+  hud.setDeathNote(`${reason} · ${bots.aliveCount('ct')} team-mate${bots.aliveCount('ct') === 1 ? '' : 's'} still holding the bay`);
   if (document.pointerLockElement) document.exitPointerLock();
 }
 
@@ -271,7 +275,9 @@ function step(dt) {
   match.step(dt);
   player.step(dt, input.state.keys);
   weaponry.step(dt);
-  if (vitals.alive) {
+  // The buy phase is a truce: the bots hold their spawns until the round goes live, so a player
+  // can pick a weapon without being shot at the counter.
+  if (vitals.alive && match.state.phase === PHASE.LIVE) {
     bots.step(dt, {
       player: { position: body.position, alive: vitals.alive, dead: vitals.dead },
       onPlayerHit,
@@ -287,7 +293,9 @@ function step(dt) {
       match.endRound('ct', 'elimination');
       announce('Round won — bay held', 'good', 2400);
       hud.feed('Round won: attackers eliminated', 'good');
-    } else if (!vitals.alive || bots.aliveCount('ct') === 0) {
+    } else if (!vitals.alive && bots.aliveCount('ct') === 0) {
+      // The squad is only eliminated when the player and every team-mate are down; the player
+      // dying alone leaves the round to the survivors.
       stats.roundsLost += 1;
       match.endRound('t', 'elimination');
       announce('Round lost — squad down', 'bad', 2400);
@@ -488,6 +496,16 @@ function runShot(name) {
   hud.setVitals(vitals.health, match.state.armor);
   paintTwiceThenReady();
 }
+
+// A test seam: run the simulation without waiting on the display's frame rate (used to verify the
+// round loop in a headless browser, and harmless in play).
+window.__advance = (seconds) => {
+  const steps = Math.min(6000, Math.round(seconds / FIXED_STEP));
+  for (let index = 0; index < steps; index += 1) step(FIXED_STEP);
+  syncCamera();
+  return { phase: match.state.phase, clock: match.clock(), score: [match.state.scoreCT, match.state.scoreT], hp: vitals.health, alive: bots.aliveCount('t'), round: match.state.round };
+};
+window.__state = () => ({ phase: match.state.phase, clock: match.clock(), hp: vitals.health, armor: match.state.armor, score: [match.state.scoreCT, match.state.scoreT], enemiesAlive: bots.aliveCount('t'), friendsAlive: bots.aliveCount('ct'), weapon: weaponry.state.current, mag: weaponry.state.mag, money: match.state.money });
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;

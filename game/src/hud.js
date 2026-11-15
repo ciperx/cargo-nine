@@ -29,6 +29,7 @@ export function createHud() {
   const hitmarker = $('hitmarker');
   const killfeed = $('killfeed');
   const banner = $('banner');
+  const deathNote = $('death-note');
   const phaseTag = $('phase-tag');
   const buyMenu = $('buy-menu');
   const buyList = $('buy-list');
@@ -92,6 +93,11 @@ export function createHud() {
         scoreT.textContent = String(t);
       });
     },
+    setDeathNote(text) {
+      deathNote.textContent = text || '';
+      deathNote.classList.toggle('on', Boolean(text));
+    },
+
     setPhase(text, tone) {
       setIfChanged('phase', `${text}|${tone}`, () => {
         phaseTag.textContent = text;

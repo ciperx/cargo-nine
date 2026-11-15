@@ -176,7 +176,11 @@ export function createBots(scene, world, map) {
       bot.decideIn -= dt;
 
       const targets = [];
-      if (ctx.player.alive && !ctx.player.dead) targets.push({ position: ctx.player.position, alive: true, isPlayer: true, team: 'player' });
+      // The player counts as a CT: only the attackers' side may shoot at them, and no friendly
+      // bot ever does.
+      if (bot.team === 't' && ctx.player.alive && !ctx.player.dead) {
+        targets.push({ position: ctx.player.position, alive: true, isPlayer: true, team: 'ct' });
+      }
       for (const other of items) {
         if (other.alive && other.team !== bot.team) targets.push(other);
       }
